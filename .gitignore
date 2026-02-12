@@ -7,8 +7,8 @@ target/
 ### STS ###
 .apt_generated
 .classpath
-.factorypath
-.project
+.factorypathdocker --version
+.projectdocker-compose.yml
 .settings
 .springBeans
 .sts4-cache
