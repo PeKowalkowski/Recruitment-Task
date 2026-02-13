@@ -1,5 +1,8 @@
 package com.recruitmentTask.demo.config;
 
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.recruitmentTask.demo.dto.OrderEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -11,10 +14,6 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ContainerProperties;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
-import org.springframework.kafka.support.serializer.JsonSerializer;
-
-import com.orders.dto.OrderEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,9 +63,8 @@ public class KafkaConfig {
     config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
     config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 
-    // JSON deserializer settings - trusted packages (security)
-    config.put(JsonDeserializer.TRUSTED_PACKAGES, "com.orders.dto");
-    config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, OrderEvent.class.getName());
+    config.put("spring.json.trusted.packages", "com.recruitmentTask.demo.dto");
+    config.put("spring.json.value.default.type", OrderEvent.class.getName());
 
     return new DefaultKafkaConsumerFactory<>(config);
   }
