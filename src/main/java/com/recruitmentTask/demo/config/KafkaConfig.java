@@ -1,7 +1,7 @@
 package com.recruitmentTask.demo.config;
 
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.recruitmentTask.demo.dto.OrderEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -13,7 +13,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
-import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,16 +34,15 @@ public class KafkaConfig {
   @Bean
   public ProducerFactory<String, OrderEvent> producerFactory() {
     Map<String, Object> config = new HashMap<>();
-
     config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
     config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 
-    config.put(ProducerConfig.ACKS_CONFIG, "all");
-    config.put(ProducerConfig.RETRIES_CONFIG, 3);
-    config.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
-
-    return new DefaultKafkaProducerFactory<>(config);
+    return new DefaultKafkaProducerFactory<>(
+      config,
+      new StringSerializer(),
+      new JsonSerializer<>()
+    );
   }
 
   @Bean
@@ -50,34 +50,37 @@ public class KafkaConfig {
     return new KafkaTemplate<>(producerFactory());
   }
 
-
   @Bean
   public ConsumerFactory<String, OrderEvent> consumerFactory() {
     Map<String, Object> config = new HashMap<>();
-
     config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
     config.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
     config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
     config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
 
-    config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-    config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 
-    config.put("spring.json.trusted.packages", "com.recruitmentTask.demo.dto");
-    config.put("spring.json.value.default.type", OrderEvent.class.getName());
+    config.put(JsonDeserializer.TRUSTED_PACKAGES, "com.recruitmentTask.demo.dto");
+    config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, OrderEvent.class.getName());
+    config.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
 
-    return new DefaultKafkaConsumerFactory<>(config);
+    return new DefaultKafkaConsumerFactory<>(
+      config,
+      new StringDeserializer(),
+      new JsonDeserializer<>(OrderEvent.class, false)
+    );
   }
 
   @Bean
   public ConcurrentKafkaListenerContainerFactory<String, OrderEvent> kafkaListenerContainerFactory() {
     ConcurrentKafkaListenerContainerFactory<String, OrderEvent> factory =
       new ConcurrentKafkaListenerContainerFactory<>();
-
     factory.setConsumerFactory(consumerFactory());
-    factory.setConcurrency(3);
-    factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
-
     return factory;
+  }
+  @Bean
+  public ObjectMapper objectMapper() {
+    ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.registerModule(new JavaTimeModule());
+    return objectMapper;
   }
 }
