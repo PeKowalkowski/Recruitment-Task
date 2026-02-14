@@ -17,10 +17,14 @@ public class OrderConsumerService {
 
   private final OrderEventRepository repository;
   private final ObjectMapper objectMapper;
+  private final EmailService emailService;
 
-  public OrderConsumerService(OrderEventRepository repository, ObjectMapper objectMapper) {
+  public OrderConsumerService(OrderEventRepository repository,
+                              ObjectMapper objectMapper,
+                              EmailService emailService) {
     this.repository = repository;
     this.objectMapper = objectMapper;
+    this.emailService = emailService;
   }
 
   @KafkaListener(topics = "order-events", groupId = "order-processors")
@@ -30,8 +34,9 @@ public class OrderConsumerService {
       event.getStatusCode());
 
     try {
-      OrderEventEntity entity = convertToEntity(event);
+      emailService.sendOrderNotification(event);
 
+      OrderEventEntity entity = convertToEntity(event);
       OrderEventEntity saved = repository.save(entity);
 
       log.info("Order event saved to database: id={}, tracking={}",
@@ -39,7 +44,7 @@ public class OrderConsumerService {
         saved.getTrackingNumber());
 
     } catch (Exception e) {
-      log.error("Failed to save order event: tracking={}",
+      log.error("Failed to process order event: tracking={}",
         event.getTrackingNumber(), e);
       throw e;
     }
