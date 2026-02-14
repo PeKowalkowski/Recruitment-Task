@@ -52,6 +52,7 @@ public class OrderEventEntity {
     this.rawPayload = rawPayload;
   }
 
+
   public Long getId() {
     return id;
   }

@@ -34,6 +34,17 @@ public class OrderEvent {
       LocalDateTime.now()
     );
   }
+  @Override
+  public String toString() {
+    return "OrderEvent{" +
+      "trackingNumber='" + trackingNumber + '\'' +
+      ", recipientEmail='" + recipientEmail + '\'' +
+      ", recipientCountryCode='" + recipientCountryCode + '\'' +
+      ", senderCountryCode='" + senderCountryCode + '\'' +
+      ", statusCode=" + statusCode +
+      ", eventTimestamp=" + eventTimestamp +
+      '}';
+  }
 
   public String getTrackingNumber() {
     return trackingNumber;
