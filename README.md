@@ -297,4 +297,12 @@ The `docker-compose.yml` file includes:
 - **kafka-ui** - Web UI for Kafka monitoring
 
 ---
+Application is configured for cloud deployment (Heroku).
+
+Configuration files included:
+- `Procfile` - Heroku deployment configuration
+- `system.properties` - Java version specification
+- `application-prod.yml` - Production configuration
+
+Local development uses Docker Compose for Kafka and PostgreSQL.
 
