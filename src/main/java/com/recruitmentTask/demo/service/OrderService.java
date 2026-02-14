@@ -16,11 +16,9 @@ public class OrderService {
   private static final String TOPIC = "order-events";
 
   private final KafkaTemplate<String, OrderEvent> kafkaTemplate;
-  private final ObjectMapper objectMapper;
 
-  public OrderService(KafkaTemplate<String, OrderEvent> kafkaTemplate, ObjectMapper objectMapper) {
+  public OrderService(KafkaTemplate<String, OrderEvent> kafkaTemplate) {
     this.kafkaTemplate = kafkaTemplate;
-    this.objectMapper = objectMapper;
   }
 
   public OrderEvent processOrder(OrderRequest request) {
