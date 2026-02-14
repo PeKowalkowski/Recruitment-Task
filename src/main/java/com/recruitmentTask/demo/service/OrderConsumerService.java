@@ -27,7 +27,7 @@ public class OrderConsumerService {
     this.emailService = emailService;
   }
 
-  @KafkaListener(topics = "order-events", groupId = "order-processors")
+  @KafkaListener(topics = "${cloudkarafka.topic:order-events}", groupId = "order-processors")
   public void consumeOrderEvent(OrderEvent event) {
     log.info("Received order event from Kafka: tracking={}, status={}",
       event.getTrackingNumber(),

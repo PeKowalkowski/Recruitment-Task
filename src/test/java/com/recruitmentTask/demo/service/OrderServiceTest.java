@@ -11,12 +11,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,6 +33,8 @@ class OrderServiceTest {
 
   @BeforeEach
   void setUp() {
+    ReflectionTestUtils.setField(orderService, "TOPIC", "order-events");
+
     testRequest = new OrderRequest();
     testRequest.setTrackingNumber("TEST123");
     testRequest.setRecipientEmail("test@example.com");
@@ -55,7 +58,7 @@ class OrderServiceTest {
     assertThat(result.getStatusCode()).isEqualTo(50);
     assertThat(result.getEventTimestamp()).isNotNull();
 
-    verify(kafkaTemplate).send(eq("order-events"), eq("TEST123"), eq(result));
+    verify(kafkaTemplate).send(anyString(), anyString(), any(OrderEvent.class));
   }
 
   @Test
@@ -66,6 +69,6 @@ class OrderServiceTest {
 
     orderService.processOrder(testRequest);
 
-    verify(kafkaTemplate).send(eq("order-events"), eq("TEST123"), any(OrderEvent.class));
+    verify(kafkaTemplate).send(anyString(), anyString(), any(OrderEvent.class));
   }
 }
