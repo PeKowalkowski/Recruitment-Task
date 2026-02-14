@@ -22,67 +22,72 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class OrderConsumerServiceTest {
 
-    @Mock
-    private OrderEventRepository repository;
+  @Mock
+  private OrderEventRepository repository;
 
-    @Mock
-    private ObjectMapper objectMapper;
+  @Mock
+  private ObjectMapper objectMapper;
 
-    @InjectMocks
-    private OrderConsumerService consumerService;
+  @Mock
+  private EmailService emailService;
 
-    private OrderEvent testEvent;
+  @InjectMocks
+  private OrderConsumerService consumerService;
 
-    @BeforeEach
-    void setUp() {
-        testEvent = new OrderEvent();
-        testEvent.setTrackingNumber("TEST123");
-        testEvent.setRecipientEmail("test@example.com");
-        testEvent.setRecipientCountryCode("PL");
-        testEvent.setSenderCountryCode("DE");
-        testEvent.setStatusCode(50);
-        testEvent.setEventTimestamp(LocalDateTime.now());
-    }
+  private OrderEvent testEvent;
 
-    @Test
-    void shouldConsumeEventAndSaveToDatabase() throws JsonProcessingException {
-        String jsonPayload = "{\"trackingNumber\":\"TEST123\"}";
-        when(objectMapper.writeValueAsString(any())).thenReturn(jsonPayload);
+  @BeforeEach
+  void setUp() {
+    testEvent = new OrderEvent();
+    testEvent.setTrackingNumber("TEST123");
+    testEvent.setRecipientEmail("test@example.com");
+    testEvent.setRecipientCountryCode("PL");
+    testEvent.setSenderCountryCode("DE");
+    testEvent.setStatusCode(50);
+    testEvent.setEventTimestamp(LocalDateTime.now());
+  }
 
-        OrderEventEntity savedEntity = new OrderEventEntity();
-        savedEntity.setId(1L);
-        savedEntity.setTrackingNumber("TEST123");
-        when(repository.save(any(OrderEventEntity.class))).thenReturn(savedEntity);
+  @Test
+  void shouldConsumeEventAndSaveToDatabase() throws JsonProcessingException {
+    String jsonPayload = "{\"trackingNumber\":\"TEST123\"}";
+    when(objectMapper.writeValueAsString(any())).thenReturn(jsonPayload);
 
-        consumerService.consumeOrderEvent(testEvent);
+    OrderEventEntity savedEntity = new OrderEventEntity();
+    savedEntity.setId(1L);
+    savedEntity.setTrackingNumber("TEST123");
+    when(repository.save(any(OrderEventEntity.class))).thenReturn(savedEntity);
 
-        ArgumentCaptor<OrderEventEntity> entityCaptor = ArgumentCaptor.forClass(OrderEventEntity.class);
-        verify(repository, times(1)).save(entityCaptor.capture());
+    consumerService.consumeOrderEvent(testEvent);
 
-        OrderEventEntity captured = entityCaptor.getValue();
-        assertThat(captured.getTrackingNumber()).isEqualTo("TEST123");
-        assertThat(captured.getRecipientEmail()).isEqualTo("test@example.com");
-        assertThat(captured.getRecipientCountryCode()).isEqualTo("PL");
-        assertThat(captured.getSenderCountryCode()).isEqualTo("DE");
-        assertThat(captured.getStatusCode()).isEqualTo(50);
-        assertThat(captured.getRawPayload()).isEqualTo(jsonPayload);
-    }
+    ArgumentCaptor<OrderEventEntity> entityCaptor = ArgumentCaptor.forClass(OrderEventEntity.class);
+    verify(repository, times(1)).save(entityCaptor.capture());
+    verify(emailService, times(1)).sendOrderNotification(testEvent);
 
-    @Test
-    void shouldHandleJsonProcessingException() throws JsonProcessingException {
-        when(objectMapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("Error") {});
+    OrderEventEntity captured = entityCaptor.getValue();
+    assertThat(captured.getTrackingNumber()).isEqualTo("TEST123");
+    assertThat(captured.getRecipientEmail()).isEqualTo("test@example.com");
+    assertThat(captured.getRecipientCountryCode()).isEqualTo("PL");
+    assertThat(captured.getSenderCountryCode()).isEqualTo("DE");
+    assertThat(captured.getStatusCode()).isEqualTo(50);
+    assertThat(captured.getRawPayload()).isEqualTo(jsonPayload);
+  }
 
-        OrderEventEntity savedEntity = new OrderEventEntity();
-        savedEntity.setId(1L);
-        when(repository.save(any(OrderEventEntity.class))).thenReturn(savedEntity);
+  @Test
+  void shouldHandleJsonProcessingException() throws JsonProcessingException {
+    when(objectMapper.writeValueAsString(any())).thenThrow(new JsonProcessingException("Error") {});
 
-        consumerService.consumeOrderEvent(testEvent);
+    OrderEventEntity savedEntity = new OrderEventEntity();
+    savedEntity.setId(1L);
+    when(repository.save(any(OrderEventEntity.class))).thenReturn(savedEntity);
 
-        ArgumentCaptor<OrderEventEntity> entityCaptor = ArgumentCaptor.forClass(OrderEventEntity.class);
-        verify(repository, times(1)).save(entityCaptor.capture());
+    consumerService.consumeOrderEvent(testEvent);
 
-        OrderEventEntity captured = entityCaptor.getValue();
-        assertThat(captured.getTrackingNumber()).isEqualTo("TEST123");
-        assertThat(captured.getRawPayload()).isNotNull();
-    }
+    ArgumentCaptor<OrderEventEntity> entityCaptor = ArgumentCaptor.forClass(OrderEventEntity.class);
+    verify(repository, times(1)).save(entityCaptor.capture());
+    verify(emailService, times(1)).sendOrderNotification(testEvent);
+
+    OrderEventEntity captured = entityCaptor.getValue();
+    assertThat(captured.getTrackingNumber()).isEqualTo("TEST123");
+    assertThat(captured.getRawPayload()).isNotNull();
+  }
 }
