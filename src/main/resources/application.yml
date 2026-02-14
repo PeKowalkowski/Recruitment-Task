@@ -70,3 +70,6 @@ logging:
     org.springframework.kafka: INFO
     org.hibernate.SQL: DEBUG
     org.flywaydb: INFO
+
+cloudkarafka:
+  topic: order-events
